@@ -3,6 +3,8 @@ const fileInput = document.getElementById('fileInput');
 const downloadSection = document.getElementById('downloadSection');
 const downloadLink = document.getElementById('downloadLink');
 
+const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -13,7 +15,7 @@ form.addEventListener('submit', async (e) => {
   formData.append('file', file);
 
   try {
-    const response = await axios.post('http://localhost:3000/convert', formData, {
+    const response = await axios.post(`${apiUrl}/convert`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },
