@@ -1,13 +1,17 @@
 const express = require('express');
 const multer = require('multer');
-const { convertFile } = require('../controllers/converter');
+const path = require('path');
+const { convertTxtToPdf } = require('../controllers/converter'); // verifique este caminho!
 
 const router = express.Router();
 
-// Configuração do multer
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(__dirname, '../uploads')),
+  filename: (req, file, cb) => cb(null, file.originalname),
+});
 
-// Rota que aceita arquivo
-router.post('/convert', upload.single('file'), convertFile);
+const upload = multer({ storage });
+
+router.post('/convert', upload.single('file'), convertTxtToPdf);
 
 module.exports = router;

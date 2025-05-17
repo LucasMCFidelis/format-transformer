@@ -1,41 +1,51 @@
 const fs = require('fs');
-const path = require('path');
 const PDFDocument = require('pdfkit');
+const path = require('path');
 
-const convertFile = (req, res) => {
+function convertTxtToPdf(req, res) {
   if (!req.file) {
-    return res.status(400).json({ error: 'Erro no upload do arquivo' });
+    return res.status(400).send('Nenhum arquivo enviado.');
   }
 
-  const filePath = path.join(__dirname, '../../uploads', req.file.filename);
+  const txtFilePath = req.file.path;
+  const pdfFileName = req.file.originalname.replace(/\.txt$/, '.pdf');
+  const pdfFilePath = path.join(__dirname, '../uploads', pdfFileName);
 
-  fs.readFile(filePath, 'utf8', (err, data) => {
+  // Lê o conteúdo do arquivo txt
+  fs.readFile(txtFilePath, 'utf8', (err, data) => {
     if (err) {
-      console.error('Erro ao ler o arquivo:', err);
-      return res.status(500).json({ error: 'Erro ao ler o arquivo' });
+      return res.status(500).send('Erro ao ler arquivo.');
     }
 
+    // Cria documento PDF
     const doc = new PDFDocument();
-    const outputPath = path.join(__dirname, '../../uploads', `${req.file.filename}.pdf`);
-    const writeStream = fs.createWriteStream(outputPath);
 
+    // Salva o PDF no disco
+    const writeStream = fs.createWriteStream(pdfFilePath);
     doc.pipe(writeStream);
+
+    // Escreve o conteúdo do txt no PDF
     doc.text(data);
+
     doc.end();
 
     writeStream.on('finish', () => {
-      res.download(outputPath, 'converted.pdf', (err) => {
+      // Retorna o PDF gerado para o cliente
+      res.download(pdfFilePath, pdfFileName, (err) => {
         if (err) {
-          console.error('Erro ao enviar o PDF:', err);
-          res.status(500).json({ error: 'Erro ao enviar o PDF' });
+          res.status(500).send('Erro ao enviar PDF.');
         }
 
-        // Limpeza dos arquivos temporários (opcional)
-        fs.unlinkSync(filePath);
-        fs.unlinkSync(outputPath);
+        // Apaga o arquivo txt e o PDF após envio, se quiser
+        fs.unlink(txtFilePath, () => {});
+        fs.unlink(pdfFilePath, () => {});
       });
     });
-  });
-};
 
-module.exports = { convertFile };
+    writeStream.on('error', () => {
+      res.status(500).send('Erro ao gerar PDF.');
+    });
+  });
+}
+
+module.exports = { convertTxtToPdf };
